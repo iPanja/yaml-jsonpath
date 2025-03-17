@@ -232,6 +232,8 @@ func typedValueOfNode(node *yaml.Node) typedValue {
 		case floatTag:
 			t = floatValueType
 		}
+	} else if node.Kind == yaml.AliasNode {
+		return typedValueOfNode(node.Alias)
 	}
 
 	return typedValue{

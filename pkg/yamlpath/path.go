@@ -194,6 +194,7 @@ func empty(node, root *yaml.Node) yit.Iterator {
 	return yit.FromNodes()
 }
 
+// root is not actually the DocumentNode
 func compose(i yit.Iterator, p *Path, root *yaml.Node) yit.Iterator {
 	its := []yit.Iterator{}
 	for a, ok := i(); ok; a, ok = i() {
@@ -257,6 +258,8 @@ func propertyNameArraySubscriptThen(subscript string, p *Path) *Path {
 	})
 }
 
+// $.store
+// [?(@.price)]
 func childThen(childName string, p *Path) *Path {
 	if childName == "*" {
 		return allChildrenThen(p)
@@ -267,9 +270,15 @@ func childThen(childName string, p *Path) *Path {
 		if node.Kind != yaml.MappingNode {
 			return empty(node, root)
 		}
-		for i, n := range node.Content {
-			if i%2 == 0 && n.Value == childName {
-				return compose(yit.FromNode(node.Content[i+1]), p, root)
+
+		// Embed merge blocks, handle aliases
+		renderedMap := ProcessNode(node)
+
+		for i, n := range renderedMap.Content {
+			if i%2 == 0 {
+				if n.Value == childName {
+					return compose(yit.FromNode(renderedMap.Content[i+1]), p, root)
+				}
 			}
 		}
 		return empty(node, root)
